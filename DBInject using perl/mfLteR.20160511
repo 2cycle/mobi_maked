@@ -1,0 +1,74 @@
+#!/usr/bin/perl -w
+
+use strict;
+use IO::Socket;
+use IO::Handle;
+
+MAIN:
+{
+
+	# ARGV List
+	# [00] sioef_ip
+	# [01] sioef_port
+	# [02] sioef_cmd
+	# [03] user_id
+	# [04] host_name
+	# [05] host_ip
+	# [06] sioef_name
+	# [07] sioef_port
+	# [08] group_name
+	# [09] node_name
+	# [10] ctrl_type
+	# [11] ctrl_cmd
+	# [12] ctrl_result
+
+	if ( @ARGV < 2 )
+	{
+		print "usage : mf ip port [command]\n";
+		print "ex       : mf 127.0.0.1 9100 act,ps00\n";
+		exit;
+	}
+
+	if ( @ARGV < 3 )
+	{
+		push @ARGV,'shw';
+		#push @ARGV,'all';
+		#print "<error>\n";
+		#print "need arguments!!!\n";
+		#print "<end>\n";
+		#exit;
+	}
+
+	my $sock = new IO::Socket::INET(
+		PeerAddr => $ARGV[0],
+		PeerPort => $ARGV[1],
+		Proto => 'tcp' );
+
+
+	unless ( $sock )
+	{
+		print "<error>\n";
+		print "socket create fail.. $! \n";
+		print "<end>\n";
+		exit;
+	}
+
+	print $sock "$ARGV[2]\n";
+	while (my $line = <$sock>)
+	{
+		print $line;
+
+		if (!($line =~ /\<begin\>/) && !($line =~ /\<end\>/)) {
+			print 'DB Insert'.$line;
+			system('python /home/lter/LTER/bin/mfLteR.py '.$ARGV[0].' '.$ARGV[1].' '.$ARGV[2].' '.$ARGV[3].' '.$ARGV[4].' '.$ARGV[5].' '.$ARGV[6].' '.$ARGV[7].' '.$ARGV[8].' '.$ARGV[9].' '.$line);
+		}
+
+		if ( $line =~ /\<end\>/)
+		{
+			print $sock "bye\n";
+			exit;
+		}
+	}
+}
+
+
